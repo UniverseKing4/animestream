@@ -15,8 +15,8 @@ android {
         applicationId = "com.animestream.app"
         minSdk = 24
         targetSdk = 35
-        versionCode = 4
-        versionName = "3.1.0"
+        versionCode = 5
+        versionName = "4.0.0"
     }
 
     buildTypes {
