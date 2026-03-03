@@ -197,118 +197,49 @@ class AnimeApiClient @Inject constructor(
         return try {
             val sources = mutableListOf<VideoSource>()
             
-            // Parse episode info from ID (format: "anime-title-episode-X")
-            val episodeNumber = episodeId.substringAfterLast("-").toIntOrNull() ?: 1
-            val animeSlug = episodeId.substringBeforeLast("-episode")
+            Log.d("AnimeAPI", "Getting streams for episode: $episodeId")
             
-            Log.d("AnimeAPI", "Searching streams for: $animeSlug episode $episodeNumber")
-            
-            // Try GogoAnime
+            // Use aniwatch-api (working public instance)
             try {
-                // Search for anime first
-                val searchResponse: HttpResponse = client.get("https://api.consumet.org/anime/gogoanime/$animeSlug") {
-                    timeout { requestTimeoutMillis = 8000 }
+                val aniwatchUrl = "https://aniwatch-api.vercel.app/api/v2/hianime/episode/sources?animeEpisodeId=$episodeId&server=hd-1&category=sub"
+                Log.d("AnimeAPI", "Trying aniwatch: $aniwatchUrl")
+                
+                val response: HttpResponse = client.get(aniwatchUrl) {
+                    timeout { requestTimeoutMillis = 10000 }
                 }
                 
-                if (searchResponse.status.value == 200) {
-                    val animeData = json.parseToJsonElement(searchResponse.bodyAsText()).jsonObject
-                    val episodes = animeData["episodes"]?.jsonArray
+                if (response.status.value == 200) {
+                    val data = json.parseToJsonElement(response.bodyAsText()).jsonObject
+                    val sourcesArray = data["sources"]?.jsonArray
                     
-                    // Find matching episode
-                    val targetEpisode = episodes?.find { ep ->
-                        ep.jsonObject["number"]?.jsonPrimitive?.intOrNull == episodeNumber
-                    }?.jsonObject
-                    
-                    val gogoEpisodeId = targetEpisode?.get("id")?.jsonPrimitive?.contentOrNull
-                    
-                    if (gogoEpisodeId != null) {
-                        // Get streaming links
-                        val streamResponse: HttpResponse = client.get("https://api.consumet.org/anime/gogoanime/watch/$gogoEpisodeId") {
-                            timeout { requestTimeoutMillis = 8000 }
-                        }
-                        
-                        if (streamResponse.status.value == 200) {
-                            val streamData = json.parseToJsonElement(streamResponse.bodyAsText()).jsonObject
-                            streamData["sources"]?.jsonArray?.forEach { source ->
-                                val obj = source.jsonObject
-                                val url = obj["url"]?.jsonPrimitive?.contentOrNull
-                                val quality = obj["quality"]?.jsonPrimitive?.contentOrNull ?: "default"
-                                if (url != null) {
-                                    sources.add(VideoSource(url = url, quality = quality, isM3U8 = url.contains(".m3u8")))
-                                    Log.d("AnimeAPI", "Added GogoAnime source: $quality")
-                                }
-                            }
+                    sourcesArray?.forEach { source ->
+                        val obj = source.jsonObject
+                        val url = obj["url"]?.jsonPrimitive?.contentOrNull
+                        val quality = obj["quality"]?.jsonPrimitive?.contentOrNull ?: "default"
+                        if (url != null) {
+                            sources.add(VideoSource(url = url, quality = quality, isM3U8 = true))
+                            Log.d("AnimeAPI", "Added source: $quality from aniwatch")
                         }
                     }
                 }
             } catch (e: Exception) {
-                Log.e("AnimeAPI", "GogoAnime failed: ${e.message}", e)
+                Log.e("AnimeAPI", "Aniwatch failed: ${e.message}", e)
             }
             
-            // Try Zoro/HiAnime
-            try {
-                val zoroSearchResponse: HttpResponse = client.get("https://api.consumet.org/anime/zoro/$animeSlug") {
-                    timeout { requestTimeoutMillis = 8000 }
-                }
-                
-                if (zoroSearchResponse.status.value == 200) {
-                    val animeData = json.parseToJsonElement(zoroSearchResponse.bodyAsText()).jsonObject
-                    val episodes = animeData["episodes"]?.jsonArray
-                    
-                    val targetEpisode = episodes?.find { ep ->
-                        ep.jsonObject["number"]?.jsonPrimitive?.intOrNull == episodeNumber
-                    }?.jsonObject
-                    
-                    val zoroEpisodeId = targetEpisode?.get("id")?.jsonPrimitive?.contentOrNull
-                    
-                    if (zoroEpisodeId != null) {
-                        val streamResponse: HttpResponse = client.get("https://api.consumet.org/anime/zoro/watch?episodeId=$zoroEpisodeId") {
-                            timeout { requestTimeoutMillis = 8000 }
-                        }
-                        
-                        if (streamResponse.status.value == 200) {
-                            val streamData = json.parseToJsonElement(streamResponse.bodyAsText()).jsonObject
-                            streamData["sources"]?.jsonArray?.forEach { source ->
-                                val obj = source.jsonObject
-                                val url = obj["url"]?.jsonPrimitive?.contentOrNull
-                                val quality = obj["quality"]?.jsonPrimitive?.contentOrNull ?: "default"
-                                if (url != null && !sources.any { it.url == url }) {
-                                    sources.add(VideoSource(url = url, quality = "Zoro $quality", isM3U8 = url.contains(".m3u8")))
-                                    Log.d("AnimeAPI", "Added Zoro source: $quality")
-                                }
-                            }
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                Log.e("AnimeAPI", "Zoro failed: ${e.message}", e)
-            }
-            
-            // Fallback: Working demo streams
+            // Fallback to demo if no sources
             if (sources.isEmpty()) {
-                Log.w("AnimeAPI", "No real sources found, using demo streams")
+                Log.w("AnimeAPI", "No anime sources, using demo")
                 sources.add(VideoSource(
                     url = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
-                    quality = "1080p (Demo)",
-                    isM3U8 = true
-                ))
-                sources.add(VideoSource(
-                    url = "https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8",
-                    quality = "720p (Demo)",
-                    isM3U8 = true
-                ))
-                sources.add(VideoSource(
-                    url = "https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8",
-                    quality = "HD (Demo)",
+                    quality = "Demo 1080p",
                     isM3U8 = true
                 ))
             }
             
-            Log.d("AnimeAPI", "Total sources found: ${sources.size}")
+            Log.d("AnimeAPI", "Total sources: ${sources.size}")
             StreamingLinks(sources = sources)
         } catch (e: Exception) {
-            Log.e("AnimeAPI", "Error getting streaming links", e)
-            // Return demo streams on error
+            Log.e("AnimeAPI", "Error: ${e.message}", e)
             StreamingLinks(sources = listOf(
                 VideoSource("https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8", "Demo", true)
             ))
