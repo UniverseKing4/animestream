@@ -4,43 +4,49 @@ import android.util.Log
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import org.jsoup.Jsoup
-import org.jsoup.nodes.Document
 import java.net.URLEncoder
 
 class GogoAnimeScraper {
     private val baseUrl = "https://anitaku.pe"
-    private val userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36"
+    private val userAgent = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
     
     suspend fun searchAnime(query: String): List<SearchResult> = withContext(Dispatchers.IO) {
         try {
             val encodedQuery = URLEncoder.encode(query, "UTF-8")
             val searchUrl = "$baseUrl/search.html?keyword=$encodedQuery"
             
-            val doc: Document = Jsoup.connect(searchUrl)
+            Log.d("GogoScraper", "Searching: $searchUrl")
+            
+            val doc = Jsoup.connect(searchUrl)
                 .userAgent(userAgent)
-                .timeout(10000)
+                .referrer("https://www.google.com/")
+                .timeout(15000)
+                .followRedirects(true)
                 .get()
             
             val results = mutableListOf<SearchResult>()
             val items = doc.select("ul.items li")
+            
+            Log.d("GogoScraper", "Found ${items.size} items")
             
             items.forEach { item ->
                 val link = item.selectFirst("p.name a")
                 val img = item.selectFirst("div.img img")
                 
                 if (link != null) {
+                    val id = link.attr("href").removePrefix("/category/")
                     results.add(SearchResult(
-                        id = link.attr("href").removePrefix("/category/"),
+                        id = id,
                         title = link.attr("title"),
                         image = img?.attr("src") ?: ""
                     ))
+                    Log.d("GogoScraper", "Found: $id")
                 }
             }
             
-            Log.d("GogoScraper", "Found ${results.size} results for: $query")
             results
         } catch (e: Exception) {
-            Log.e("GogoScraper", "Search failed: ${e.message}", e)
+            Log.e("GogoScraper", "Search failed", e)
             emptyList()
         }
     }
@@ -86,57 +92,77 @@ class GogoAnimeScraper {
     suspend fun getStreamingLinks(episodeId: String): List<StreamLink> = withContext(Dispatchers.IO) {
         try {
             val url = "$baseUrl/$episodeId"
-            val doc: Document = Jsoup.connect(url)
+            Log.d("GogoScraper", "Getting streams from: $url")
+            
+            val doc = Jsoup.connect(url)
                 .userAgent(userAgent)
-                .timeout(10000)
+                .referrer(baseUrl)
+                .timeout(15000)
                 .get()
             
             val links = mutableListOf<StreamLink>()
             
-            // Get streaming server links
             doc.select("div.anime_muti_link ul li a").forEach { server ->
                 val dataVideo = server.attr("data-video")
                 if (dataVideo.isNotEmpty()) {
+                    val fullUrl = if (dataVideo.startsWith("//")) "https:$dataVideo" else dataVideo
                     links.add(StreamLink(
-                        url = if (dataVideo.startsWith("//")) "https:$dataVideo" else dataVideo,
+                        url = fullUrl,
                         quality = server.text(),
                         server = server.text()
                     ))
+                    Log.d("GogoScraper", "Server: ${server.text()} -> $fullUrl")
                 }
             }
             
-            Log.d("GogoScraper", "Found ${links.size} stream links for: $episodeId")
             links
         } catch (e: Exception) {
-            Log.e("GogoScraper", "Get streaming links failed: ${e.message}", e)
+            Log.e("GogoScraper", "Get streaming links failed", e)
             emptyList()
         }
     }
     
     suspend fun extractM3U8(embedUrl: String): String? = withContext(Dispatchers.IO) {
         try {
-            val doc: Document = Jsoup.connect(embedUrl)
+            Log.d("GogoScraper", "Extracting from: $embedUrl")
+            
+            val doc = Jsoup.connect(embedUrl)
                 .userAgent(userAgent)
-                .timeout(10000)
+                .referrer(baseUrl)
+                .timeout(15000)
                 .get()
             
-            // Extract m3u8 from various embed sources
             val scripts = doc.select("script")
             for (script in scripts) {
-                val scriptContent = script.html()
-                if (scriptContent.contains(".m3u8")) {
-                    val m3u8Regex = """https?://[^\s"']+\.m3u8[^\s"']*""".toRegex()
-                    val match = m3u8Regex.find(scriptContent)
-                    if (match != null) {
-                        Log.d("GogoScraper", "Extracted m3u8: ${match.value}")
-                        return@withContext match.value
+                val content = script.html()
+                
+                // Look for m3u8 URLs
+                val m3u8Regex = """https?://[^\s"'`]+\.m3u8[^\s"'`]*""".toRegex()
+                val match = m3u8Regex.find(content)
+                if (match != null) {
+                    val url = match.value.replace("\\", "")
+                    Log.d("GogoScraper", "Found m3u8: $url")
+                    return@withContext url
+                }
+                
+                // Look for file: or sources: patterns
+                if (content.contains("file:") || content.contains("sources:")) {
+                    val fileRegex = """file:\s*["']([^"']+)["']""".toRegex()
+                    val fileMatch = fileRegex.find(content)
+                    if (fileMatch != null) {
+                        val url = fileMatch.groupValues[1]
+                        if (url.contains(".m3u8")) {
+                            Log.d("GogoScraper", "Found file: $url")
+                            return@withContext url
+                        }
                     }
                 }
             }
             
+            Log.w("GogoScraper", "No m3u8 found in embed")
             null
         } catch (e: Exception) {
-            Log.e("GogoScraper", "Extract m3u8 failed: ${e.message}", e)
+            Log.e("GogoScraper", "Extract m3u8 failed", e)
             null
         }
     }
