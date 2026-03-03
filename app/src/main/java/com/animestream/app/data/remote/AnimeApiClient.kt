@@ -11,14 +11,16 @@ import javax.inject.Singleton
 class AnimeApiClient @Inject constructor(
     private val client: HttpClient
 ) {
-    private val baseUrl = "https://api.consumet.org/meta/anilist"
+    private val baseUrl = "https://api-consumet-org-psi-five.vercel.app/meta/anilist"
 
     suspend fun getTrending(page: Int = 1): AnimeSearchResult {
         return try {
             client.get("$baseUrl/trending") {
                 parameter("page", page)
+                parameter("perPage", 20)
             }.body()
         } catch (e: Exception) {
+            e.printStackTrace()
             AnimeSearchResult()
         }
     }
@@ -27,8 +29,10 @@ class AnimeApiClient @Inject constructor(
         return try {
             client.get("$baseUrl/popular") {
                 parameter("page", page)
+                parameter("perPage", 20)
             }.body()
         } catch (e: Exception) {
+            e.printStackTrace()
             AnimeSearchResult()
         }
     }
@@ -37,8 +41,10 @@ class AnimeApiClient @Inject constructor(
         return try {
             client.get("$baseUrl/recent-episodes") {
                 parameter("page", page)
+                parameter("perPage", 20)
             }.body()
         } catch (e: Exception) {
+            e.printStackTrace()
             AnimeSearchResult()
         }
     }
@@ -49,6 +55,7 @@ class AnimeApiClient @Inject constructor(
                 parameter("page", page)
             }.body()
         } catch (e: Exception) {
+            e.printStackTrace()
             AnimeSearchResult()
         }
     }
@@ -57,6 +64,7 @@ class AnimeApiClient @Inject constructor(
         return try {
             client.get("$baseUrl/info/$id").body()
         } catch (e: Exception) {
+            e.printStackTrace()
             null
         }
     }
@@ -65,6 +73,7 @@ class AnimeApiClient @Inject constructor(
         return try {
             client.get("$baseUrl/watch/$episodeId").body()
         } catch (e: Exception) {
+            e.printStackTrace()
             StreamingLinks()
         }
     }
@@ -76,6 +85,7 @@ class AnimeApiClient @Inject constructor(
                 parameter("page", page)
             }.body()
         } catch (e: Exception) {
+            e.printStackTrace()
             AnimeSearchResult()
         }
     }
