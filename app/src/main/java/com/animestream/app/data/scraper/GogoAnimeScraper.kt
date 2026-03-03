@@ -54,7 +54,7 @@ class GogoAnimeScraper {
     suspend fun getEpisodes(animeId: String): List<EpisodeInfo> = withContext(Dispatchers.IO) {
         try {
             val url = "$baseUrl/category/$animeId"
-            val doc: Document = Jsoup.connect(url)
+            val doc = Jsoup.connect(url)
                 .userAgent(userAgent)
                 .timeout(10000)
                 .get()
@@ -66,7 +66,7 @@ class GogoAnimeScraper {
             
             if (movieId.isNotEmpty()) {
                 val ajaxUrl = "https://ajax.gogocdn.net/ajax/load-list-episode?ep_start=$epStart&ep_end=$epEnd&id=$movieId"
-                val epDoc: Document = Jsoup.connect(ajaxUrl)
+                val epDoc = Jsoup.connect(ajaxUrl)
                     .userAgent(userAgent)
                     .timeout(10000)
                     .get()
