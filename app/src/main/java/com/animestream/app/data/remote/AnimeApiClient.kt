@@ -198,18 +198,57 @@ class AnimeApiClient @Inject constructor(
             val sources = mutableListOf<VideoSource>()
             Log.d("AnimeAPI", "Getting streams for: $episodeId")
             
-            // Multi-source strategy with working streams
-            val streamSources = listOf(
-                // High quality demo streams that ACTUALLY WORK
-                VideoSource("https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8", "1080p HD", true),
-                VideoSource("https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8", "720p", true),
-                VideoSource("https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8", "HD", true),
-                VideoSource("https://bitdash-a.akamaihd.net/content/MI201109210084_1/m3u8s/f08e80da-bf1d-4e3d-8899-f0f6155f6efa.m3u8", "Multi-bitrate", true)
-            )
+            // Try GogoAnime scraping
+            try {
+                val scraper = com.animestream.app.data.scraper.GogoAnimeScraper()
+                
+                // Parse anime title from episode ID
+                val animeTitle = episodeId.substringBeforeLast("-episode")
+                    .replace("-", " ")
+                
+                Log.d("AnimeAPI", "Searching GogoAnime for: $animeTitle")
+                val searchResults = scraper.searchAnime(animeTitle)
+                
+                if (searchResults.isNotEmpty()) {
+                    val animeId = searchResults.first().id
+                    val episodes = scraper.getEpisodes(animeId)
+                    
+                    // Find matching episode
+                    val epNum = episodeId.substringAfterLast("-").toIntOrNull() ?: 1
+                    val episode = episodes.find { it.number == epNum }
+                    
+                    if (episode != null) {
+                        val streamLinks = scraper.getStreamingLinks(episode.id)
+                        
+                        for (link in streamLinks) {
+                            // Try to extract m3u8 from embed
+                            val m3u8 = scraper.extractM3U8(link.url)
+                            if (m3u8 != null) {
+                                sources.add(VideoSource(
+                                    url = m3u8,
+                                    quality = link.quality,
+                                    isM3U8 = true
+                                ))
+                                Log.d("AnimeAPI", "Added GogoAnime source: ${link.quality}")
+                            }
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("AnimeAPI", "GogoAnime scraping failed: ${e.message}", e)
+            }
             
-            sources.addAll(streamSources)
-            Log.d("AnimeAPI", "Added ${sources.size} working streams")
+            // Fallback to working demo streams
+            if (sources.isEmpty()) {
+                Log.w("AnimeAPI", "No anime sources found, using demo streams")
+                sources.addAll(listOf(
+                    VideoSource("https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8", "1080p HD", true),
+                    VideoSource("https://demo.unified-streaming.com/k8s/features/stable/video/tears-of-steel/tears-of-steel.ism/.m3u8", "720p", true),
+                    VideoSource("https://bitdash-a.akamaihd.net/content/sintel/hls/playlist.m3u8", "HD", true)
+                ))
+            }
             
+            Log.d("AnimeAPI", "Total sources: ${sources.size}")
             StreamingLinks(sources = sources)
         } catch (e: Exception) {
             Log.e("AnimeAPI", "Error: ${e.message}", e)
