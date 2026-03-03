@@ -93,6 +93,7 @@ fun PlayerScreen(
                 val currentSource = streamingLinks!!.sources.getOrNull(selectedSourceIndex)
                 
                 if (currentSource != null) {
+                    val context = LocalContext.current
                     val exoPlayer = remember(currentSource.url) {
                         ExoPlayer.Builder(context).build().apply {
                             val mediaItem = MediaItem.Builder()
@@ -116,6 +117,8 @@ fun PlayerScreen(
                                 PlayerView(ctx).apply {
                                     player = exoPlayer
                                     useController = true
+                                    controllerShowTimeoutMs = 5000
+                                    controllerHideOnTouch = true
                                     layoutParams = FrameLayout.LayoutParams(
                                         ViewGroup.LayoutParams.MATCH_PARENT,
                                         ViewGroup.LayoutParams.MATCH_PARENT
