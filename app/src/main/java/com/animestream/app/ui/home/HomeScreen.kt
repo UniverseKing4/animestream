@@ -42,12 +42,25 @@ fun HomeScreen(
             )
         }
     ) { padding ->
-        if (isLoading && trendingAnime.isEmpty()) {
-            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
-                CircularProgressIndicator()
-            }
-        } else {
-            LazyColumn(
+        Box(Modifier.fillMaxSize().padding(padding)) {
+            when {
+                isLoading && trendingAnime.isEmpty() -> {
+                    CircularProgressIndicator(Modifier.align(Alignment.Center))
+                }
+                trendingAnime.isEmpty() && popularAnime.isEmpty() && recentEpisodes.isEmpty() -> {
+                    Column(
+                        Modifier.align(Alignment.Center),
+                        horizontalAlignment = Alignment.CenterHorizontally
+                    ) {
+                        Text("Unable to load anime")
+                        Spacer(Modifier.height(8.dp))
+                        Button(onClick = { viewModel.loadHomeData() }) {
+                            Text("Retry")
+                        }
+                    }
+                }
+                else -> {
+                    LazyColumn(
                 modifier = Modifier.fillMaxSize().padding(padding),
                 contentPadding = PaddingValues(vertical = 16.dp)
             ) {
