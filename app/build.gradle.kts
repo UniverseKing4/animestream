@@ -89,6 +89,12 @@ dependencies {
     implementation("androidx.media3:media3-exoplayer:1.5.0")
     implementation("androidx.media3:media3-ui:1.5.0")
     implementation("androidx.media3:media3-exoplayer-hls:1.5.0")
+    
+    // Jsoup for scraping
+    implementation("org.jsoup:jsoup:1.17.2")
+    
+    // OkHttp
+    implementation("com.squareup.okhttp3:okhttp:4.12.0")
 
     // DataStore
     implementation("androidx.datastore:datastore-preferences:1.1.1")
