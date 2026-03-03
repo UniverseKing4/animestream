@@ -22,10 +22,15 @@ jobs:
       - name: Build APK
         run: ./gradlew assembleRelease
         
+      - name: Rename APK
+        run: |
+          cd app/build/outputs/apk/release
+          mv app-release.apk animestream-v${{ steps.version.outputs.name }}.apk
+        
       - uses: actions/upload-artifact@v4
         with:
           name: app-release
-          path: app/build/outputs/apk/release/*.apk
+          path: app/build/outputs/apk/release/animestream-*.apk
 
       - name: Get version
         id: version
@@ -34,7 +39,7 @@ jobs:
       - uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main'
         with:
-          files: app/build/outputs/apk/release/*.apk
+          files: app/build/outputs/apk/release/animestream-*.apk
           tag_name: v${{ steps.version.outputs.name }}
           name: AnimeStream v${{ steps.version.outputs.name }}
           body: "Automated release"
