@@ -193,15 +193,79 @@ class AnimeApiClient @Inject constructor(
     }
 
     suspend fun getStreamingLinks(episodeId: String): StreamingLinks {
-        return StreamingLinks(
-            sources = listOf(
-                VideoSource(
-                    url = "https://example.com/stream/$episodeId",
+        return try {
+            // Try multiple sources for maximum reliability
+            val sources = mutableListOf<VideoSource>()
+            
+            // Source 1: Try Crunchyroll links from AniList
+            try {
+                val query = """
+                    query {
+                        Media(id: $episodeId) {
+                            streamingEpisodes {
+                                url
+                                site
+                            }
+                        }
+                    }
+                """.trimIndent()
+                
+                val response: HttpResponse = client.post(anilistUrl) {
+                    contentType(ContentType.Application.Json)
+                    setBody(mapOf("query" to query))
+                }
+                
+                val jsonResponse = json.parseToJsonElement(response.bodyAsText()).jsonObject
+                val media = jsonResponse["data"]?.jsonObject?.get("Media")?.jsonObject
+                val episodes = media?.get("streamingEpisodes")?.jsonArray
+                
+                episodes?.forEach { ep ->
+                    val epObj = ep.jsonObject
+                    val url = epObj["url"]?.jsonPrimitive?.contentOrNull
+                    val site = epObj["site"]?.jsonPrimitive?.contentOrNull
+                    if (url != null && site == "Crunchyroll") {
+                        sources.add(VideoSource(
+                            url = url,
+                            quality = "1080p",
+                            isM3U8 = false
+                        ))
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("AnimeAPI", "Error fetching Crunchyroll links", e)
+            }
+            
+            // Source 2: Generate HiAnime embed links
+            try {
+                // Format: https://megaplay.buzz/stream/s-2/{ep-id}/sub
+                sources.add(VideoSource(
+                    url = "https://megaplay.buzz/stream/s-2/$episodeId/sub",
                     quality = "1080p",
                     isM3U8 = true
-                )
-            )
-        )
+                ))
+                sources.add(VideoSource(
+                    url = "https://megaplay.buzz/stream/s-2/$episodeId/dub",
+                    quality = "1080p (Dub)",
+                    isM3U8 = true
+                ))
+            } catch (e: Exception) {
+                Log.e("AnimeAPI", "Error generating HiAnime links", e)
+            }
+            
+            // Source 3: Fallback demo sources
+            if (sources.isEmpty()) {
+                sources.add(VideoSource(
+                    url = "https://test-streams.mux.dev/x36xhzz/x36xhzz.m3u8",
+                    quality = "Demo",
+                    isM3U8 = true
+                ))
+            }
+            
+            StreamingLinks(sources = sources)
+        } catch (e: Exception) {
+            Log.e("AnimeAPI", "Error getting streaming links", e)
+            StreamingLinks()
+        }
     }
 
     suspend fun getAnimeByGenre(genre: String, page: Int = 1): AnimeSearchResult {
