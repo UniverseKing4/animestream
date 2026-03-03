@@ -21,6 +21,10 @@ jobs:
           
       - name: Build APK
         run: ./gradlew assembleRelease
+
+      - name: Get version
+        id: version
+        run: echo "name=$(grep 'versionName =' app/build.gradle.kts | awk -F'"' '{print $2}')" >> $GITHUB_OUTPUT
         
       - name: Rename APK
         run: |
@@ -31,10 +35,6 @@ jobs:
         with:
           name: app-release
           path: app/build/outputs/apk/release/animestream-*.apk
-
-      - name: Get version
-        id: version
-        run: echo "name=$(grep 'versionName =' app/build.gradle.kts | awk -F'"' '{print $2}')" >> $GITHUB_OUTPUT
 
       - uses: softprops/action-gh-release@v2
         if: github.ref == 'refs/heads/main'
