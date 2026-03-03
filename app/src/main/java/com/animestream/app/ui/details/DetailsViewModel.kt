@@ -23,8 +23,12 @@ class DetailsViewModel @Inject constructor(
     fun loadAnimeInfo(id: String) {
         viewModelScope.launch {
             _isLoading.value = true
-            repository.getAnimeInfo(id).collect { result ->
-                _animeInfo.value = result.getOrNull()
+            try {
+                val info = repository.getAnimeInfo(id)
+                _animeInfo.value = info
+            } catch (e: Exception) {
+                _animeInfo.value = null
+            } finally {
                 _isLoading.value = false
             }
         }

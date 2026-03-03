@@ -35,26 +35,29 @@ class HomeViewModel @Inject constructor(
             _isLoading.value = true
             
             launch {
-                repository.getTrending().collect { result ->
-                    result.getOrNull()?.let {
-                        _trendingAnime.value = it.results
-                    }
+                try {
+                    val result = repository.getTrending()
+                    _trendingAnime.value = result.results
+                } catch (e: Exception) {
+                    // Handle error
                 }
             }
             
             launch {
-                repository.getPopular().collect { result ->
-                    result.getOrNull()?.let {
-                        _popularAnime.value = it.results
-                    }
+                try {
+                    val result = repository.getPopular()
+                    _popularAnime.value = result.results
+                } catch (e: Exception) {
+                    // Handle error
                 }
             }
             
             launch {
-                repository.getRecentEpisodes().collect { result ->
-                    result.getOrNull()?.let {
-                        _recentEpisodes.value = it.results
-                    }
+                try {
+                    val result = repository.getRecentEpisodes()
+                    _recentEpisodes.value = result.results
+                } catch (e: Exception) {
+                    // Handle error
                 }
             }
             

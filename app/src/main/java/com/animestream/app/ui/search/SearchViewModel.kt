@@ -28,8 +28,12 @@ class SearchViewModel @Inject constructor(
         
         viewModelScope.launch {
             _isLoading.value = true
-            repository.searchAnime(query).collect { result ->
-                _searchResults.value = result.getOrNull()?.results ?: emptyList()
+            try {
+                val result = repository.searchAnime(query)
+                _searchResults.value = result.results
+            } catch (e: Exception) {
+                _searchResults.value = emptyList()
+            } finally {
                 _isLoading.value = false
             }
         }
