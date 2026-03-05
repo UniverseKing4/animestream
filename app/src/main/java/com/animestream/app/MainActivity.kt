@@ -4,16 +4,29 @@ import android.os.Bundle
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
+import androidx.activity.OnBackPressedCallback
 
 class MainActivity : ComponentActivity() {
+    private lateinit var webView: WebView
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        val webView = WebView(this).apply {
+        webView = WebView(this).apply {
             webViewClient = WebViewClient()
             settings.javaScriptEnabled = true
             loadDataWithBaseURL(null, HTML, "text/html", "UTF-8", null)
         }
         setContentView(webView)
+        
+        onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
+            override fun handleOnBackPressed() {
+                if (webView.canGoBack()) {
+                    webView.goBack()
+                } else {
+                    finish()
+                }
+            }
+        })
     }
 
     companion object {
