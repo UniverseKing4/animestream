@@ -29,7 +29,8 @@ jobs:
       - name: Rename APK
         run: |
           cd app/build/outputs/apk/release
-          mv app-release.apk animestream-v${{ steps.version.outputs.name }}.apk
+          APK_FILE=$(ls app-release*.apk | head -1)
+          mv "$APK_FILE" animestream-v${{ steps.version.outputs.name }}.apk
         
       - uses: actions/upload-artifact@v4
         with:
