@@ -1,20 +1,27 @@
 package com.animestream.app
 
 import android.annotation.SuppressLint
-import android.content.Intent
-import android.net.Uri
-import android.os.Bundle
+import android.view.View
+import android.view.ViewGroup
 import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
+import android.widget.FrameLayout
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
+import androidx.core.view.WindowCompat
+import androidx.core.view.WindowInsetsCompat
+import androidx.core.view.WindowInsetsControllerCompat
+import android.os.Bundle
 import java.io.ByteArrayInputStream
 
 class MainActivity : ComponentActivity() {
     private lateinit var webView: WebView
+    private lateinit var container: FrameLayout
+    private var customView: View? = null
+    private var customViewCallback: WebChromeClient.CustomViewCallback? = null
     
     private val adHosts = setOf(
         "doubleclick.net", "googleadservices.com", "googlesyndication.com",
@@ -55,28 +62,27 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
+        container = FrameLayout(this)
+        setContentView(container)
+        
         webView = WebView(this).apply {
             webViewClient = object : WebViewClient() {
                 override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
                     val url = request?.url?.toString() ?: return false
                     
-                    // Block intent:// schemes and redirects
                     if (url.startsWith("intent://") || url.startsWith("market://") || 
                         url.startsWith("android-app://")) {
                         return true
                     }
                     
-                    // Block ad redirects
                     if (isAdUrl(url)) {
                         return true
                     }
                     
-                    // Allow http/https
                     if (url.startsWith("http://") || url.startsWith("https://")) {
                         return false
                     }
                     
-                    // Block everything else
                     return true
                 }
                 
@@ -92,9 +98,34 @@ class MainActivity : ComponentActivity() {
             }
             
             webChromeClient = object : WebChromeClient() {
-                override fun onCreateWindow(view: WebView?, isDialog: Boolean, isUserGesture: Boolean, resultMsg: android.os.Message?): Boolean {
-                    // Block popup windows
-                    return false
+                override fun onShowCustomView(view: View?, callback: CustomViewCallback?) {
+                    if (customView != null) {
+                        callback?.onCustomViewHidden()
+                        return
+                    }
+                    
+                    customView = view
+                    customViewCallback = callback
+                    
+                    webView.visibility = View.GONE
+                    container.addView(customView, FrameLayout.LayoutParams(
+                        ViewGroup.LayoutParams.MATCH_PARENT,
+                        ViewGroup.LayoutParams.MATCH_PARENT
+                    ))
+                    
+                    hideSystemUI()
+                }
+                
+                override fun onHideCustomView() {
+                    if (customView == null) return
+                    
+                    webView.visibility = View.VISIBLE
+                    container.removeView(customView)
+                    customView = null
+                    customViewCallback?.onCustomViewHidden()
+                    customViewCallback = null
+                    
+                    showSystemUI()
                 }
             }
             
@@ -111,11 +142,16 @@ class MainActivity : ComponentActivity() {
             loadDataWithBaseURL(null, HTML, "text/html", "UTF-8", null)
         }
         
-        setContentView(webView)
+        container.addView(webView, FrameLayout.LayoutParams(
+            ViewGroup.LayoutParams.MATCH_PARENT,
+            ViewGroup.LayoutParams.MATCH_PARENT
+        ))
         
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
             override fun handleOnBackPressed() {
-                if (webView.canGoBack()) {
+                if (customView != null) {
+                    webView.webChromeClient?.onHideCustomView()
+                } else if (webView.canGoBack()) {
                     webView.goBack()
                 } else {
                     finish()
@@ -124,15 +160,26 @@ class MainActivity : ComponentActivity() {
         })
     }
     
+    private fun hideSystemUI() {
+        WindowCompat.setDecorFitsSystemWindows(window, false)
+        WindowInsetsControllerCompat(window, window.decorView).let { controller ->
+            controller.hide(WindowInsetsCompat.Type.systemBars())
+            controller.systemBarsBehavior = WindowInsetsControllerCompat.BEHAVIOR_SHOW_TRANSIENT_BARS_BY_SWIPE
+        }
+    }
+    
+    private fun showSystemUI() {
+        WindowCompat.setDecorFitsSystemWindows(window, true)
+        WindowInsetsControllerCompat(window, window.decorView).show(WindowInsetsCompat.Type.systemBars())
+    }
+    
     private fun isAdUrl(url: String): Boolean {
         val lowerUrl = url.lowercase()
         
-        // Check against known ad hosts
         if (adHosts.any { lowerUrl.contains(it) }) {
             return true
         }
         
-        // Check against ad patterns
         if (adPatterns.any { it.matches(url) }) {
             return true
         }
