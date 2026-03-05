@@ -11,7 +11,7 @@ class MainActivity : ComponentActivity() {
         val webView = WebView(this).apply {
             webViewClient = WebViewClient()
             settings.javaScriptEnabled = true
-            loadData(HTML, "text/html", "UTF-8")
+            loadDataWithBaseURL(null, HTML, "text/html", "UTF-8", null)
         }
         setContentView(webView)
     }
