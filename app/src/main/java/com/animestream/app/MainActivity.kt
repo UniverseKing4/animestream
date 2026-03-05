@@ -137,6 +137,10 @@ class MainActivity : ComponentActivity() {
                 blockNetworkImage = false
                 loadsImagesAutomatically = true
                 mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+                mediaPlaybackRequiresUserGesture = false
+                allowFileAccess = true
+                allowContentAccess = true
+                databaseEnabled = true
             }
             
             loadDataWithBaseURL(null, HTML, "text/html", "UTF-8", null)
