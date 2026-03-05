@@ -1,6 +1,8 @@
 package com.animestream.app
 
 import android.os.Bundle
+import android.webkit.WebResourceRequest
+import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
@@ -9,10 +11,25 @@ import androidx.activity.OnBackPressedCallback
 class MainActivity : ComponentActivity() {
     private lateinit var webView: WebView
     
+    private val adHosts = setOf(
+        "doubleclick.net", "googleadservices.com", "googlesyndication.com",
+        "google-analytics.com", "googletagmanager.com", "facebook.net",
+        "ads", "adservice", "advertising", "analytics", "tracker",
+        "banner", "popup", "popunder"
+    )
+    
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         webView = WebView(this).apply {
-            webViewClient = WebViewClient()
+            webViewClient = object : WebViewClient() {
+                override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): WebResourceResponse? {
+                    val url = request?.url?.toString() ?: return super.shouldInterceptRequest(view, request)
+                    if (adHosts.any { url.contains(it, ignoreCase = true) }) {
+                        return WebResourceResponse("text/plain", "utf-8", null)
+                    }
+                    return super.shouldInterceptRequest(view, request)
+                }
+            }
             settings.javaScriptEnabled = true
             loadDataWithBaseURL(null, HTML, "text/html", "UTF-8", null)
         }
