@@ -1,12 +1,17 @@
 package com.animestream.app
 
+import android.annotation.SuppressLint
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.webkit.WebChromeClient
 import android.webkit.WebResourceRequest
 import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
+import java.io.ByteArrayInputStream
 
 class MainActivity : ComponentActivity() {
     private lateinit var webView: WebView
@@ -14,25 +19,98 @@ class MainActivity : ComponentActivity() {
     private val adHosts = setOf(
         "doubleclick.net", "googleadservices.com", "googlesyndication.com",
         "google-analytics.com", "googletagmanager.com", "facebook.net",
-        "ads", "adservice", "advertising", "analytics", "tracker",
-        "banner", "popup", "popunder"
+        "facebook.com/tr", "connect.facebook.net", "adservice", "advertising",
+        "analytics", "tracker", "banner", "popup", "popunder", "ad.doubleclick.net",
+        "static.doubleclick.net", "m.doubleclick.net", "mediavisor.doubleclick.net",
+        "pagead2.googlesyndication.com", "adserver", "ads-twitter.com",
+        "ads.linkedin.com", "ads.pinterest.com", "ads.reddit.com",
+        "ads.youtube.com", "adservice.google", "afs.googlesyndication.com",
+        "tpc.googlesyndication.com", "pagead.googlesyndication.com",
+        "pagead.l.google.com", "partnerad.l.google.com", "video-ad-stats.googlesyndication.com",
+        "www.googletagservices.com", "www.google-analytics.com", "ssl.google-analytics.com",
+        "adclick", "adserver", "adtech", "adview", "advertising.com",
+        "adsystem", "adnxs.com", "advertising.com", "adsrvr.org",
+        "adform.net", "serving-sys.com", "criteo.com", "outbrain.com",
+        "taboola.com", "revcontent.com", "mgid.com", "propellerads.com",
+        "popcash.net", "popads.net", "exoclick.com", "juicyads.com",
+        "trafficjunky.com", "ero-advertising.com", "exosrv.com",
+        "tsyndicate.com", "clksite.com", "adcash.com", "hilltopads.net",
+        "clickadu.com", "adsterra.com", "adk2x.com", "adk2.co",
+        "amskiploomr.com", "ak.amskiploomr.com"
     )
     
+    private val adPatterns = listOf(
+        Regex(".*[/.]ad[sx]?[/.].*", RegexOption.IGNORE_CASE),
+        Regex(".*[/.]ad[sx]?\\d+[/.].*", RegexOption.IGNORE_CASE),
+        Regex(".*[/_]ads?[/_].*", RegexOption.IGNORE_CASE),
+        Regex(".*[/.]advert.*", RegexOption.IGNORE_CASE),
+        Regex(".*[/.]banner.*", RegexOption.IGNORE_CASE),
+        Regex(".*[/.]popup.*", RegexOption.IGNORE_CASE),
+        Regex(".*[/.]click.*", RegexOption.IGNORE_CASE),
+        Regex(".*[/.]track.*", RegexOption.IGNORE_CASE),
+        Regex(".*[/.]analytic.*", RegexOption.IGNORE_CASE)
+    )
+    
+    @SuppressLint("SetJavaScriptEnabled")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
+        
         webView = WebView(this).apply {
             webViewClient = object : WebViewClient() {
+                override fun shouldOverrideUrlLoading(view: WebView?, request: WebResourceRequest?): Boolean {
+                    val url = request?.url?.toString() ?: return false
+                    
+                    // Block intent:// schemes and redirects
+                    if (url.startsWith("intent://") || url.startsWith("market://") || 
+                        url.startsWith("android-app://")) {
+                        return true
+                    }
+                    
+                    // Block ad redirects
+                    if (isAdUrl(url)) {
+                        return true
+                    }
+                    
+                    // Allow http/https
+                    if (url.startsWith("http://") || url.startsWith("https://")) {
+                        return false
+                    }
+                    
+                    // Block everything else
+                    return true
+                }
+                
                 override fun shouldInterceptRequest(view: WebView?, request: WebResourceRequest?): WebResourceResponse? {
                     val url = request?.url?.toString() ?: return super.shouldInterceptRequest(view, request)
-                    if (adHosts.any { url.contains(it, ignoreCase = true) }) {
-                        return WebResourceResponse("text/plain", "utf-8", null)
+                    
+                    if (isAdUrl(url)) {
+                        return WebResourceResponse("text/plain", "utf-8", ByteArrayInputStream("".toByteArray()))
                     }
+                    
                     return super.shouldInterceptRequest(view, request)
                 }
             }
-            settings.javaScriptEnabled = true
+            
+            webChromeClient = object : WebChromeClient() {
+                override fun onCreateWindow(view: WebView?, isDialog: Boolean, isUserGesture: Boolean, resultMsg: android.os.Message?): Boolean {
+                    // Block popup windows
+                    return false
+                }
+            }
+            
+            settings.apply {
+                javaScriptEnabled = true
+                domStorageEnabled = true
+                javaScriptCanOpenWindowsAutomatically = false
+                setSupportMultipleWindows(false)
+                blockNetworkImage = false
+                loadsImagesAutomatically = true
+                mixedContentMode = android.webkit.WebSettings.MIXED_CONTENT_COMPATIBILITY_MODE
+            }
+            
             loadDataWithBaseURL(null, HTML, "text/html", "UTF-8", null)
         }
+        
         setContentView(webView)
         
         onBackPressedDispatcher.addCallback(this, object : OnBackPressedCallback(true) {
@@ -44,6 +122,22 @@ class MainActivity : ComponentActivity() {
                 }
             }
         })
+    }
+    
+    private fun isAdUrl(url: String): Boolean {
+        val lowerUrl = url.lowercase()
+        
+        // Check against known ad hosts
+        if (adHosts.any { lowerUrl.contains(it) }) {
+            return true
+        }
+        
+        // Check against ad patterns
+        if (adPatterns.any { it.matches(url) }) {
+            return true
+        }
+        
+        return false
     }
 
     companion object {
