@@ -1,81 +1,51 @@
 package com.animestream.app
 
 import android.os.Bundle
+import android.webkit.WebView
+import android.webkit.WebViewClient
 import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.layout.fillMaxSize
-import androidx.compose.material3.MaterialTheme
-import androidx.compose.material3.Surface
-import androidx.compose.ui.Modifier
-import androidx.core.splashscreen.SplashScreen.Companion.installSplashScreen
-import androidx.navigation.compose.NavHost
-import androidx.navigation.compose.composable
-import androidx.navigation.compose.rememberNavController
-import com.animestream.app.ui.details.DetailsScreen
-import com.animestream.app.ui.home.HomeScreen
-import com.animestream.app.ui.player.PlayerScreen
-import com.animestream.app.ui.search.SearchScreen
-import com.animestream.app.ui.theme.AnimeStreamTheme
-import dagger.hilt.android.AndroidEntryPoint
 
-@AndroidEntryPoint
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
-        installSplashScreen()
         super.onCreate(savedInstanceState)
-        enableEdgeToEdge()
-        
-        setContent {
-            AnimeStreamTheme {
-                Surface(
-                    modifier = Modifier.fillMaxSize(),
-                    color = MaterialTheme.colorScheme.background
-                ) {
-                    val navController = rememberNavController()
-                    
-                    NavHost(navController, startDestination = "home") {
-                        composable("home") {
-                            HomeScreen(
-                                onAnimeClick = { id ->
-                                    navController.navigate("details/$id")
-                                },
-                                onSearchClick = {
-                                    navController.navigate("search")
-                                }
-                            )
-                        }
-                        
-                        composable("search") {
-                            SearchScreen(
-                                onBackClick = { navController.popBackStack() },
-                                onAnimeClick = { id ->
-                                    navController.navigate("details/$id")
-                                }
-                            )
-                        }
-                        
-                        composable("details/{animeId}") { backStackEntry ->
-                            val animeId = backStackEntry.arguments?.getString("animeId") ?: ""
-                            DetailsScreen(
-                                animeId = animeId,
-                                onBackClick = { navController.popBackStack() },
-                                onEpisodeClick = { episodeId ->
-                                    navController.navigate("player/$episodeId")
-                                }
-                            )
-                        }
-                        
-                        composable("player/{episodeId}") { backStackEntry ->
-                            val episodeId = backStackEntry.arguments?.getString("episodeId") ?: ""
-                            PlayerScreen(
-                                episodeId = episodeId,
-                                onBackClick = { navController.popBackStack() }
-                            )
-                        }
-                    }
-                }
-            }
+        val webView = WebView(this).apply {
+            webViewClient = WebViewClient()
+            settings.javaScriptEnabled = true
+            loadData(HTML, "text/html", "UTF-8")
         }
+        setContentView(webView)
+    }
+
+    companion object {
+        const val HTML = """
+<!DOCTYPE html>
+<html>
+<head>
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<style>
+body{margin:0;padding:20px;font-family:Arial,sans-serif;background:#1a1a1a;color:#fff}
+h1{text-align:center}
+.links{max-width:600px;margin:0 auto}
+a{display:block;padding:15px;margin:10px 0;background:#2a2a2a;color:#fff;text-decoration:none;border-radius:5px}
+a:active{background:#3a3a3a}
+</style>
+</head>
+<body>
+<h1>Anime Sites</h1>
+<div class="links">
+<a href="https://anikai.to/home">Anikai</a>
+<a href="https://9animetv.to/home">9Anime TV</a>
+<a href="https://aniwatchtv.to/home">AniWatch TV</a>
+<a href="https://hianime.to/home">HiAnime</a>
+<a href="https://miruro.su/">Miruro</a>
+<a href="https://animotvslash.org/">AnimoTV Slash</a>
+<a href="https://www.animeparadise.moe/">Anime Paradise</a>
+<a href="https://hianimes.se/">HiAnimes</a>
+<a href="https://gogoanimes.cv/">GogoAnimes</a>
+<a href="https://animepahe.si/">AnimePahe</a>
+</div>
+</body>
+</html>
+"""
     }
 }
