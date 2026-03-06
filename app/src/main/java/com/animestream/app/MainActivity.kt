@@ -239,8 +239,15 @@ h1{color:#fff;text-align:center;font-size:26px;font-weight:700;margin-bottom:6px
 .links{display:flex;flex-direction:column;gap:8px}
 a{display:flex;align-items:center;padding:14px 16px;background:#1a1a1a;color:#fff;text-decoration:none;border-radius:12px;font-size:15px;font-weight:600;border:1px solid #2a2a2a;transition:all 0.15s ease;position:relative;will-change:transform}
 a:active{transform:scale(0.98);background:#222;border-color:#333}
-.icon{width:36px;height:36px;margin-right:12px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;font-weight:700;flex-shrink:0}
+a.loading{pointer-events:none;opacity:0.6}
+.icon{width:36px;height:36px;margin-right:12px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;font-weight:700;flex-shrink:0;transition:transform 0.3s}
+a.loading .icon{animation:spin 1s linear infinite}
+.loader{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.9);padding:24px 32px;border-radius:16px;display:none;z-index:1000;backdrop-filter:blur(10px)}
+.loader.show{display:block;animation:fadeIn 0.2s}
+.loader-text{color:#fff;font-size:14px;font-weight:600;text-align:center;margin-bottom:12px}
+.spinner{width:40px;height:40px;margin:0 auto;border:3px solid #333;border-top-color:#667eea;border-radius:50%;animation:spin 0.8s linear infinite}
 @keyframes fadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+@keyframes spin{to{transform:rotate(360deg)}}
 .links a{animation:slideIn 0.3s ease forwards;opacity:0}
 .links a:nth-child(1){animation-delay:0.05s}
 .links a:nth-child(2){animation-delay:0.1s}
@@ -255,27 +262,35 @@ a:active{transform:scale(0.98);background:#222;border-color:#333}
 @keyframes slideIn{to{opacity:1;transform:translateX(0)}from{opacity:0;transform:translateX(-10px)}}
 </style>
 <script>
-function navigate(url, domain) {
+let loader;
+function navigate(url, domain, elem) {
+    if(!loader) loader = document.getElementById('loader');
+    elem.classList.add('loading');
+    loader.classList.add('show');
     window.currentDomain = domain;
-    window.location.href = url;
+    setTimeout(() => window.location.href = url, 300);
 }
 </script>
 </head>
 <body>
+<div class="loader" id="loader">
+<div class="loader-text">Loading...</div>
+<div class="spinner"></div>
+</div>
 <div class="container">
 <h1>🎬 Anime Sites</h1>
 <p class="subtitle">Choose your streaming platform</p>
 <div class="links">
-<a href="javascript:navigate('https://9animetv.to/home','9animetv.to')"><span class="icon">9</span>9Anime TV</a>
-<a href="javascript:navigate('https://anikai.to/home','anikai.to')"><span class="icon">A</span>Anikai</a>
-<a href="javascript:navigate('https://www.animeparadise.moe/','animeparadise.moe')"><span class="icon">P</span>Anime Paradise</a>
-<a href="javascript:navigate('https://animepahe.si/','animepahe.si')"><span class="icon">A</span>AnimePahe</a>
-<a href="javascript:navigate('https://animotvslash.org/','animotvslash.org')"><span class="icon">T</span>AnimoTV Slash</a>
-<a href="javascript:navigate('https://aniwatchtv.to/home','aniwatchtv.to')"><span class="icon">W</span>AniWatch TV</a>
-<a href="javascript:navigate('https://gogoanimes.cv/','gogoanimes.cv')"><span class="icon">G</span>GogoAnimes</a>
-<a href="javascript:navigate('https://hianime.to/home','hianime.to')"><span class="icon">H</span>HiAnime</a>
-<a href="javascript:navigate('https://hianimes.se/home','hianimes.se')"><span class="icon">H</span>HiAnimes</a>
-<a href="javascript:navigate('https://miruro.su/','miruro.su')"><span class="icon">M</span>Miruro</a>
+<a href="#" onclick="navigate('https://9animetv.to/home','9animetv.to',this);return false"><span class="icon">9</span>9Anime TV</a>
+<a href="#" onclick="navigate('https://anikai.to/home','anikai.to',this);return false"><span class="icon">A</span>Anikai</a>
+<a href="#" onclick="navigate('https://www.animeparadise.moe/','animeparadise.moe',this);return false"><span class="icon">P</span>Anime Paradise</a>
+<a href="#" onclick="navigate('https://animepahe.si/','animepahe.si',this);return false"><span class="icon">A</span>AnimePahe</a>
+<a href="#" onclick="navigate('https://animotvslash.org/','animotvslash.org',this);return false"><span class="icon">T</span>AnimoTV Slash</a>
+<a href="#" onclick="navigate('https://aniwatchtv.to/home','aniwatchtv.to',this);return false"><span class="icon">W</span>AniWatch TV</a>
+<a href="#" onclick="navigate('https://gogoanimes.cv/','gogoanimes.cv',this);return false"><span class="icon">G</span>GogoAnimes</a>
+<a href="#" onclick="navigate('https://hianime.to/home','hianime.to',this);return false"><span class="icon">H</span>HiAnime</a>
+<a href="#" onclick="navigate('https://hianimes.se/home','hianimes.se',this);return false"><span class="icon">H</span>HiAnimes</a>
+<a href="#" onclick="navigate('https://miruro.su/','miruro.su',this);return false"><span class="icon">M</span>Miruro</a>
 </div>
 </div>
 </body>
