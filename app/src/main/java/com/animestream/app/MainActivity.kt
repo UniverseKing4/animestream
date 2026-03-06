@@ -62,6 +62,9 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
+        window.statusBarColor = android.graphics.Color.TRANSPARENT
+        window.navigationBarColor = android.graphics.Color.TRANSPARENT
+        
         container = FrameLayout(this)
         setContentView(container)
         
@@ -198,35 +201,37 @@ class MainActivity : ComponentActivity() {
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
 *{margin:0;padding:0;box-sizing:border-box}
-body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:20px}
+body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:24px 20px 120px}
 .container{max-width:600px;margin:0 auto}
-h1{color:#fff;text-align:center;font-size:32px;margin-bottom:30px;text-shadow:0 2px 10px rgba(0,0,0,0.3);animation:fadeIn 0.5s}
-.links{display:grid;gap:12px}
-a{display:flex;align-items:center;padding:18px 20px;background:rgba(255,255,255,0.95);color:#333;text-decoration:none;border-radius:12px;font-size:16px;font-weight:500;box-shadow:0 4px 15px rgba(0,0,0,0.1);transition:all 0.3s;position:relative;overflow:hidden}
-a:before{content:'';position:absolute;left:0;top:0;height:100%;width:4px;background:linear-gradient(135deg,#667eea,#764ba2);transition:width 0.3s}
-a:active{transform:scale(0.98);box-shadow:0 2px 8px rgba(0,0,0,0.15)}
-a:active:before{width:100%}
-a:active{color:#fff}
-.icon{width:24px;height:24px;margin-right:12px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:50%;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px;font-weight:bold;flex-shrink:0}
-@keyframes fadeIn{from{opacity:0;transform:translateY(-20px)}to{opacity:1;transform:translateY(0)}}
-.links a{animation:slideIn 0.5s forwards;opacity:0}
-.links a:nth-child(1){animation-delay:0.1s}
-.links a:nth-child(2){animation-delay:0.15s}
-.links a:nth-child(3){animation-delay:0.2s}
-.links a:nth-child(4){animation-delay:0.25s}
-.links a:nth-child(5){animation-delay:0.3s}
-.links a:nth-child(6){animation-delay:0.35s}
-.links a:nth-child(7){animation-delay:0.4s}
-.links a:nth-child(8){animation-delay:0.45s}
-.links a:nth-child(9){animation-delay:0.5s}
-.links a:nth-child(10){animation-delay:0.55s}
-@keyframes slideIn{to{opacity:1;transform:translateX(0)}from{opacity:0;transform:translateX(-20px)}}
+h1{color:#fff;text-align:center;font-size:28px;font-weight:700;margin-bottom:8px;text-shadow:0 2px 20px rgba(0,0,0,0.2);animation:fadeIn 0.6s;letter-spacing:-0.5px}
+.subtitle{color:rgba(255,255,255,0.85);text-align:center;font-size:14px;font-weight:500;margin-bottom:32px;animation:fadeIn 0.6s 0.1s backwards}
+.links{display:grid;gap:10px}
+a{display:flex;align-items:center;padding:16px 18px;background:rgba(255,255,255,0.98);color:#1a1a1a;text-decoration:none;border-radius:16px;font-size:15px;font-weight:600;box-shadow:0 2px 12px rgba(0,0,0,0.08);transition:all 0.2s cubic-bezier(0.4,0,0.2,1);position:relative;overflow:hidden;backdrop-filter:blur(10px)}
+a:before{content:'';position:absolute;left:0;top:0;height:100%;width:3px;background:linear-gradient(135deg,#667eea,#764ba2);transition:width 0.3s cubic-bezier(0.4,0,0.2,1)}
+a:active{transform:scale(0.97);box-shadow:0 1px 6px rgba(0,0,0,0.12)}
+a:active:before{width:100%;opacity:0.1}
+.icon{width:40px;height:40px;margin-right:14px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:700;flex-shrink:0;box-shadow:0 2px 8px rgba(102,126,234,0.3)}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
+.links a{animation:slideIn 0.4s cubic-bezier(0.4,0,0.2,1) forwards;opacity:0}
+.links a:nth-child(1){animation-delay:0.05s}
+.links a:nth-child(2){animation-delay:0.1s}
+.links a:nth-child(3){animation-delay:0.15s}
+.links a:nth-child(4){animation-delay:0.2s}
+.links a:nth-child(5){animation-delay:0.25s}
+.links a:nth-child(6){animation-delay:0.3s}
+.links a:nth-child(7){animation-delay:0.35s}
+.links a:nth-child(8){animation-delay:0.4s}
+.links a:nth-child(9){animation-delay:0.45s}
+.links a:nth-child(10){animation-delay:0.5s}
+@keyframes slideIn{to{opacity:1;transform:translateX(0)}from{opacity:0;transform:translateX(-15px)}}
 </style>
 </head>
 <body>
 <div class="container">
 <h1>🎬 Anime Sites</h1>
+<p class="subtitle">Choose your streaming platform</p>
 <div class="links">
 <a href="https://anikai.to/home"><span class="icon">A</span>Anikai</a>
 <a href="https://9animetv.to/home"><span class="icon">9</span>9Anime TV</a>
