@@ -9,6 +9,7 @@ import android.webkit.WebResourceResponse
 import android.webkit.WebView
 import android.webkit.WebViewClient
 import android.widget.FrameLayout
+import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.OnBackPressedCallback
 import androidx.core.view.WindowCompat
@@ -22,6 +23,20 @@ class MainActivity : ComponentActivity() {
     private lateinit var container: FrameLayout
     private var customView: View? = null
     private var customViewCallback: WebChromeClient.CustomViewCallback? = null
+    private var currentDomain: String? = null
+    
+    private val allowedDomains = mapOf(
+        "9animetv.to" to "https://9animetv.to/home",
+        "anikai.to" to "https://anikai.to/home",
+        "animeparadise.moe" to "https://www.animeparadise.moe/",
+        "animepahe.si" to "https://animepahe.si/",
+        "animotvslash.org" to "https://animotvslash.org/",
+        "aniwatchtv.to" to "https://aniwatchtv.to/home",
+        "gogoanimes.cv" to "https://gogoanimes.cv/",
+        "hianime.to" to "https://hianime.to/home",
+        "hianimes.se" to "https://hianimes.se/home",
+        "miruro.su" to "https://miruro.su/"
+    )
     
     private val adHosts = setOf(
         "doubleclick.net", "googleadservices.com", "googlesyndication.com",
@@ -83,6 +98,11 @@ class MainActivity : ComponentActivity() {
                     }
                     
                     if (url.startsWith("http://") || url.startsWith("https://")) {
+                        val domain = extractDomain(url)
+                        if (currentDomain != null && domain != currentDomain) {
+                            Toast.makeText(this@MainActivity, "Blocked redirect to $domain", Toast.LENGTH_SHORT).show()
+                            return true
+                        }
                         return false
                     }
                     
@@ -167,6 +187,15 @@ class MainActivity : ComponentActivity() {
         })
     }
     
+    private fun extractDomain(url: String): String {
+        return try {
+            val uri = android.net.Uri.parse(url)
+            uri.host?.lowercase() ?: ""
+        } catch (e: Exception) {
+            ""
+        }
+    }
+    
     private fun hideSystemUI() {
         WindowCompat.setDecorFitsSystemWindows(window, false)
         WindowInsetsControllerCompat(window, window.decorView).let { controller ->
@@ -201,20 +230,18 @@ class MainActivity : ComponentActivity() {
 <head>
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <style>
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
-*{margin:0;padding:0;box-sizing:border-box}
-body{font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;background:linear-gradient(135deg,#667eea 0%,#764ba2 100%);min-height:100vh;padding:24px 20px 120px}
-.container{max-width:600px;margin:0 auto}
-h1{color:#fff;text-align:center;font-size:28px;font-weight:700;margin-bottom:8px;text-shadow:0 2px 20px rgba(0,0,0,0.2);animation:fadeIn 0.6s;letter-spacing:-0.5px}
-.subtitle{color:rgba(255,255,255,0.85);text-align:center;font-size:14px;font-weight:500;margin-bottom:32px;animation:fadeIn 0.6s 0.1s backwards}
-.links{display:grid;gap:10px}
-a{display:flex;align-items:center;padding:16px 18px;background:rgba(255,255,255,0.98);color:#1a1a1a;text-decoration:none;border-radius:16px;font-size:15px;font-weight:600;box-shadow:0 2px 12px rgba(0,0,0,0.08);transition:all 0.2s cubic-bezier(0.4,0,0.2,1);position:relative;overflow:hidden;backdrop-filter:blur(10px)}
-a:before{content:'';position:absolute;left:0;top:0;height:100%;width:3px;background:linear-gradient(135deg,#667eea,#764ba2);transition:width 0.3s cubic-bezier(0.4,0,0.2,1)}
-a:active{transform:scale(0.97);box-shadow:0 1px 6px rgba(0,0,0,0.12)}
-a:active:before{width:100%;opacity:0.1}
-.icon{width:40px;height:40px;margin-right:14px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:12px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;font-weight:700;flex-shrink:0;box-shadow:0 2px 8px rgba(102,126,234,0.3)}
-@keyframes fadeIn{from{opacity:0;transform:translateY(-10px)}to{opacity:1;transform:translateY(0)}}
-.links a{animation:slideIn 0.4s cubic-bezier(0.4,0,0.2,1) forwards;opacity:0}
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@500;600;700&display=swap');
+*{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+body{font-family:'Inter',system-ui,-apple-system,sans-serif;background:#0f0f0f;min-height:100vh;padding:20px 16px 100px;overflow-x:hidden}
+.container{max-width:480px;margin:0 auto}
+h1{color:#fff;text-align:center;font-size:26px;font-weight:700;margin-bottom:6px;letter-spacing:-0.5px;animation:fadeIn 0.5s}
+.subtitle{color:#888;text-align:center;font-size:13px;font-weight:500;margin-bottom:28px;animation:fadeIn 0.5s 0.1s backwards}
+.links{display:flex;flex-direction:column;gap:8px}
+a{display:flex;align-items:center;padding:14px 16px;background:#1a1a1a;color:#fff;text-decoration:none;border-radius:12px;font-size:15px;font-weight:600;border:1px solid #2a2a2a;transition:all 0.15s ease;position:relative;will-change:transform}
+a:active{transform:scale(0.98);background:#222;border-color:#333}
+.icon{width:36px;height:36px;margin-right:12px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;font-weight:700;flex-shrink:0}
+@keyframes fadeIn{from{opacity:0;transform:translateY(-8px)}to{opacity:1;transform:translateY(0)}}
+.links a{animation:slideIn 0.3s ease forwards;opacity:0}
 .links a:nth-child(1){animation-delay:0.05s}
 .links a:nth-child(2){animation-delay:0.1s}
 .links a:nth-child(3){animation-delay:0.15s}
@@ -225,24 +252,30 @@ a:active:before{width:100%;opacity:0.1}
 .links a:nth-child(8){animation-delay:0.4s}
 .links a:nth-child(9){animation-delay:0.45s}
 .links a:nth-child(10){animation-delay:0.5s}
-@keyframes slideIn{to{opacity:1;transform:translateX(0)}from{opacity:0;transform:translateX(-15px)}}
+@keyframes slideIn{to{opacity:1;transform:translateX(0)}from{opacity:0;transform:translateX(-10px)}}
 </style>
+<script>
+function navigate(url, domain) {
+    window.currentDomain = domain;
+    window.location.href = url;
+}
+</script>
 </head>
 <body>
 <div class="container">
 <h1>🎬 Anime Sites</h1>
 <p class="subtitle">Choose your streaming platform</p>
 <div class="links">
-<a href="https://anikai.to/home"><span class="icon">A</span>Anikai</a>
-<a href="https://9animetv.to/home"><span class="icon">9</span>9Anime TV</a>
-<a href="https://aniwatchtv.to/home"><span class="icon">W</span>AniWatch TV</a>
-<a href="https://hianime.to/home"><span class="icon">H</span>HiAnime</a>
-<a href="https://miruro.su/"><span class="icon">M</span>Miruro</a>
-<a href="https://animotvslash.org/"><span class="icon">T</span>AnimoTV Slash</a>
-<a href="https://www.animeparadise.moe/"><span class="icon">P</span>Anime Paradise</a>
-<a href="https://hianimes.se/"><span class="icon">H</span>HiAnimes</a>
-<a href="https://gogoanimes.cv/"><span class="icon">G</span>GogoAnimes</a>
-<a href="https://animepahe.si/"><span class="icon">A</span>AnimePahe</a>
+<a href="javascript:navigate('https://9animetv.to/home','9animetv.to')"><span class="icon">9</span>9Anime TV</a>
+<a href="javascript:navigate('https://anikai.to/home','anikai.to')"><span class="icon">A</span>Anikai</a>
+<a href="javascript:navigate('https://www.animeparadise.moe/','animeparadise.moe')"><span class="icon">P</span>Anime Paradise</a>
+<a href="javascript:navigate('https://animepahe.si/','animepahe.si')"><span class="icon">A</span>AnimePahe</a>
+<a href="javascript:navigate('https://animotvslash.org/','animotvslash.org')"><span class="icon">T</span>AnimoTV Slash</a>
+<a href="javascript:navigate('https://aniwatchtv.to/home','aniwatchtv.to')"><span class="icon">W</span>AniWatch TV</a>
+<a href="javascript:navigate('https://gogoanimes.cv/','gogoanimes.cv')"><span class="icon">G</span>GogoAnimes</a>
+<a href="javascript:navigate('https://hianime.to/home','hianime.to')"><span class="icon">H</span>HiAnime</a>
+<a href="javascript:navigate('https://hianimes.se/home','hianimes.se')"><span class="icon">H</span>HiAnimes</a>
+<a href="javascript:navigate('https://miruro.su/','miruro.su')"><span class="icon">M</span>Miruro</a>
 </div>
 </div>
 </body>
