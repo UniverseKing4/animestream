@@ -1,61 +1,47 @@
-# AnimeStream 🎬
+# Anime Sites Browser
 
-A modern, feature-rich Android anime streaming app built with Jetpack Compose and Material 3.
+A sleek, modern Android app for browsing anime streaming sites with built-in ad blocking and domain protection.
 
-## ✨ Features
+## Features
 
-- **Multiple Free Sources**: Powered by Consumet API with support for multiple anime providers
-- **Trending & Popular**: Browse trending and popular anime
-- **Recent Episodes**: Stay updated with the latest episode releases
-- **Advanced Search**: Find any anime quickly
-- **Beautiful UI**: Modern Material 3 design with dark theme
-- **HD Streaming**: High-quality video playback with ExoPlayer
-- **No Ads**: Clean, ad-free experience
-- **Fast & Smooth**: Optimized performance with Kotlin Coroutines
+✨ **Modern Dark UI** - Clean, minimalist interface with smooth animations  
+🚫 **Advanced Ad Blocker** - Blocks ads, popups, trackers, and intent redirects  
+🔒 **Domain Lock Protection** - Prevents accidental redirects to other sites  
+📱 **Fullscreen Video Support** - Native fullscreen for video playback  
+🎯 **10 Anime Sites** - Quick access to popular streaming platforms  
+⚡ **Optimized Performance** - Hardware accelerated, smooth 60fps animations  
+🔄 **Smart Navigation** - Back button support with WebView history  
 
-## 🏗️ Architecture
+## Supported Sites
 
-- **MVVM Pattern**: Clean architecture with separation of concerns
-- **Jetpack Compose**: Modern declarative UI
-- **Hilt**: Dependency injection
-- **Ktor**: Networking client
-- **Media3 ExoPlayer**: Video playback
-- **Coil**: Image loading
-- **Kotlin Coroutines & Flow**: Asynchronous programming
+- 9Anime TV
+- Anikai
+- Anime Paradise
+- AnimePahe
+- AnimoTV Slash
+- AniWatch TV
+- GogoAnimes
+- HiAnime
+- HiAnimes
+- Miruro
 
-## 📱 Screens
+## Download
 
-1. **Home**: Trending, popular anime, and recent episodes
-2. **Search**: Find anime by title
-3. **Details**: View anime information, episodes, and genres
-4. **Player**: Stream episodes with full playback controls
+Get the latest APK from [Releases](https://github.com/UniverseKing4/animestream/releases)
 
-## 🔧 Tech Stack
+## Building
 
-- Kotlin
-- Jetpack Compose
-- Material 3
-- Hilt (Dependency Injection)
-- Ktor (HTTP Client)
-- Media3 ExoPlayer
-- Coil (Image Loading)
-- Navigation Compose
-- Kotlin Serialization
+```bash
+./gradlew assembleRelease
+```
 
-## 🚀 Getting Started
+APK will be in `app/build/outputs/apk/release/`
 
-1. Clone the repository
-2. Open in Android Studio
-3. Build and run
+## Requirements
 
-## 📦 API
+- Android 7.0 (API 24) or higher
+- Internet connection
 
-Uses [Consumet API](https://docs.consumet.org/) for anime data and streaming links.
-
-## 📄 License
+## License
 
 This project is for educational purposes only.
-
-## ⚠️ Disclaimer
-
-This app uses publicly available APIs. Please support official anime streaming services.
