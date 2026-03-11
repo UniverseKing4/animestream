@@ -209,7 +209,6 @@ class MainActivity : ComponentActivity() {
                     ))
                     
                     hideSystemUI()
-                    enterPipMode()
                 }
                 
                 override fun onHideCustomView() {
@@ -266,7 +265,12 @@ class MainActivity : ComponentActivity() {
     
     override fun onDestroy() {
         super.onDestroy()
-        scope.cancel()
+        try {
+            scope.cancel()
+            webView.destroy()
+        } catch (e: Exception) {
+            // Ignore
+        }
     }
     
     override fun onPictureInPictureModeChanged(isInPictureInPictureMode: Boolean) {
@@ -355,46 +359,49 @@ class MainActivity : ComponentActivity() {
     
     private fun checkSiteStatus() {
         scope.launch {
-            val statuses = mutableMapOf<String, Boolean>()
-            allowedDomains.values.forEach { url ->
-                val isOnline = withContext(Dispatchers.IO) {
-                    try {
-                        val connection = URL(url).openConnection() as HttpURLConnection
-                        connection.requestMethod = "HEAD"
-                        connection.connectTimeout = 5000
-                        connection.readTimeout = 5000
-                        connection.instanceFollowRedirects = true
-                        connection.setRequestProperty("User-Agent", "Mozilla/5.0")
-                        connection.connect()
-                        val code = connection.responseCode
-                        connection.disconnect()
-                        code in 200..399
-                    } catch (e: Exception) {
-                        false
+            allowedDomains.forEach { (domain, url) ->
+                launch {
+                    val isOnline = withContext(Dispatchers.IO) {
+                        try {
+                            val connection = URL(url).openConnection() as HttpURLConnection
+                            connection.requestMethod = "HEAD"
+                            connection.connectTimeout = 3000
+                            connection.readTimeout = 3000
+                            connection.instanceFollowRedirects = true
+                            connection.setRequestProperty("User-Agent", "Mozilla/5.0")
+                            connection.connect()
+                            val code = connection.responseCode
+                            connection.disconnect()
+                            code in 200..399
+                        } catch (e: Exception) {
+                            false
+                        }
                     }
+                    updateSiteStatus(url, isOnline)
                 }
-                statuses[url] = isOnline
             }
-            updateSiteStatuses(statuses)
         }
     }
     
-    private fun updateSiteStatuses(statuses: Map<String, Boolean>) {
+    private fun updateSiteStatus(url: String, isOnline: Boolean) {
         val js = """
             (function() {
-                const statuses = ${statuses.entries.joinToString(",", "{", "}") { 
-                    "\"${it.key}\":${it.value}" 
-                }};
-                document.querySelectorAll('a[data-url]').forEach(link => {
-                    const url = link.getAttribute('data-url');
+                const link = document.querySelector('a[data-url="${url.replace("\"", "\\\"")}"]');
+                if (link) {
                     const indicator = link.querySelector('.status');
-                    if (indicator && statuses[url] !== undefined) {
-                        indicator.className = 'status ' + (statuses[url] ? 'online' : 'offline');
+                    if (indicator) {
+                        indicator.className = 'status ${if (isOnline) "online" else "offline"}';
                     }
-                });
+                }
             })();
         """
-        webView.evaluateJavascript(js, null)
+        runOnUiThread {
+            try {
+                webView.evaluateJavascript(js, null)
+            } catch (e: Exception) {
+                // WebView might be destroyed
+            }
+        }
     }
     
     private fun extractDomain(url: String): String {
