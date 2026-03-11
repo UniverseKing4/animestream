@@ -259,8 +259,6 @@ class MainActivity : ComponentActivity() {
                 }
             }
         })
-        
-        checkSiteStatus()
     }
     
     override fun onDestroy() {
@@ -357,53 +355,6 @@ class MainActivity : ComponentActivity() {
         return sites
     }
     
-    private fun checkSiteStatus() {
-        scope.launch {
-            allowedDomains.forEach { (domain, url) ->
-                launch {
-                    val isOnline = withContext(Dispatchers.IO) {
-                        try {
-                            val connection = URL(url).openConnection() as HttpURLConnection
-                            connection.requestMethod = "HEAD"
-                            connection.connectTimeout = 3000
-                            connection.readTimeout = 3000
-                            connection.instanceFollowRedirects = true
-                            connection.setRequestProperty("User-Agent", "Mozilla/5.0")
-                            connection.connect()
-                            val code = connection.responseCode
-                            connection.disconnect()
-                            code in 200..399
-                        } catch (e: Exception) {
-                            false
-                        }
-                    }
-                    updateSiteStatus(url, isOnline)
-                }
-            }
-        }
-    }
-    
-    private fun updateSiteStatus(url: String, isOnline: Boolean) {
-        val js = """
-            (function() {
-                const link = document.querySelector('a[data-url="${url.replace("\"", "\\\"")}"]');
-                if (link) {
-                    const indicator = link.querySelector('.status');
-                    if (indicator) {
-                        indicator.className = 'status ${if (isOnline) "online" else "offline"}';
-                    }
-                }
-            })();
-        """
-        runOnUiThread {
-            try {
-                webView.evaluateJavascript(js, null)
-            } catch (e: Exception) {
-                // WebView might be destroyed
-            }
-        }
-    }
-    
     private fun extractDomain(url: String): String {
         return try {
             val uri = android.net.Uri.parse(url)
@@ -448,10 +399,7 @@ class MainActivity : ComponentActivity() {
             val deleteBtn = if (!isDefault) """<button class="delete-btn" onclick="event.preventDefault();event.stopPropagation();deleteSite('$domain',this.parentElement);return false">×</button>""" else ""
             """<a href="#" data-url="$url" data-domain="$domain" onclick="navigate('$url','$domain',this);return false">
                 <span class="icon">$initial</span>
-                <span class="site-info">
-                    <span class="site-name">$name</span>
-                    <span class="status checking"></span>
-                </span>
+                <span class="site-name">$name</span>
                 $deleteBtn
             </a>"""
         }.joinToString("\n")
@@ -474,12 +422,7 @@ a:active{transform:scale(0.98);background:#222;border-color:#333}
 a.loading{pointer-events:none;opacity:0.6}
 .icon{width:36px;height:36px;margin-right:12px;background:linear-gradient(135deg,#667eea,#764ba2);border-radius:10px;display:flex;align-items:center;justify-content:center;color:#fff;font-size:15px;font-weight:700;flex-shrink:0;transition:transform 0.3s}
 a.loading .icon{animation:spin 1s linear infinite}
-.site-info{flex:1;display:flex;align-items:center;justify-content:space-between}
 .site-name{flex:1}
-.status{width:8px;height:8px;border-radius:50%;background:#444;margin-left:8px}
-.status.checking{animation:pulse 1.5s infinite}
-.status.online{background:#0f0}
-.status.offline{background:#f00}
 .delete-btn{width:28px;height:28px;border-radius:50%;background:#f00;color:#fff;border:none;font-size:20px;line-height:1;cursor:pointer;display:flex;align-items:center;justify-content:center;margin-left:8px;flex-shrink:0}
 .delete-btn:active{background:#c00}
 .loader{position:fixed;top:50%;left:50%;transform:translate(-50%,-50%);background:rgba(0,0,0,0.9);padding:24px 32px;border-radius:16px;display:none;z-index:1000;backdrop-filter:blur(10px)}
