@@ -129,9 +129,11 @@ class MainActivity : ComponentActivity() {
         webView = WebView(this).apply {
             addJavascriptInterface(object {
                 @android.webkit.JavascriptInterface
-                fun addSite(domain: String, url: String) {
+                fun addSite(domain: String, url: String, name: String) {
                     val prefs = getSharedPreferences("sites", Context.MODE_PRIVATE)
                     prefs.edit().putString(domain, url).apply()
+                    val namePrefs = getSharedPreferences("site_names", Context.MODE_PRIVATE)
+                    namePrefs.edit().putString(domain, name).apply()
                     allowedDomains[domain] = url
                 }
                 
@@ -140,6 +142,8 @@ class MainActivity : ComponentActivity() {
                     if (defaultSites.containsKey(domain)) return
                     val prefs = getSharedPreferences("sites", Context.MODE_PRIVATE)
                     prefs.edit().remove(domain).apply()
+                    val namePrefs = getSharedPreferences("site_names", Context.MODE_PRIVATE)
+                    namePrefs.edit().remove(domain).apply()
                     allowedDomains.remove(domain)
                 }
                 
@@ -392,10 +396,15 @@ class MainActivity : ComponentActivity() {
     }
     
     private fun generateHTML(): String {
+        val namePrefs = getSharedPreferences("site_names", Context.MODE_PRIVATE)
         val siteLinks = allowedDomains.map { (domain, url) ->
-            val name = domain.split(".")[0].replaceFirstChar { it.uppercase() }
-            val initial = name.first().uppercase()
             val isDefault = defaultSites.containsKey(domain)
+            val name = if (isDefault) {
+                domain.split(".")[0].replaceFirstChar { it.uppercase() }
+            } else {
+                namePrefs.getString(domain, domain.split(".")[0].replaceFirstChar { it.uppercase() }) ?: domain
+            }
+            val initial = name.first().uppercase()
             val deleteBtn = if (!isDefault) """<button class="delete-btn" onclick="event.preventDefault();event.stopPropagation();deleteSite('$domain',this.parentElement);return false">×</button>""" else ""
             """<a href="#" data-url="$url" data-domain="$domain" onclick="navigate('$url','$domain',this);return false">
                 <span class="icon">$initial</span>
@@ -479,7 +488,7 @@ function addSite() {
     }
     try {
         const domain = new URL(url).hostname;
-        window.AndroidBridge.addSite(domain, url);
+        window.AndroidBridge.addSite(domain, url, name);
         
         const initial = name.charAt(0).toUpperCase();
         const newLink = document.createElement('a');
