@@ -480,8 +480,17 @@ function addSite() {
     try {
         const domain = new URL(url).hostname;
         window.AndroidBridge.addSite(domain, url);
+        
+        const initial = name.charAt(0).toUpperCase();
+        const newLink = document.createElement('a');
+        newLink.href = '#';
+        newLink.setAttribute('data-url', url);
+        newLink.setAttribute('data-domain', domain);
+        newLink.onclick = function() { navigate(url, domain, this); return false; };
+        newLink.innerHTML = `<span class="icon">${initial}</span><span class="site-name">${name}</span><button class="delete-btn" onclick="event.preventDefault();event.stopPropagation();deleteSite('${domain}',this.parentElement);return false">×</button>`;
+        document.querySelector('.links').appendChild(newLink);
+        
         hideAddModal();
-        location.reload();
     } catch(e) {
         alert('Invalid URL');
     }
